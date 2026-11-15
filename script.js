@@ -339,3 +339,102 @@ function endGame(text) {
 }
 
 
+// ---------- PART 9: Running the game ----------
+// What this is: the GAME LOOP, a function that calls itself again and again.
+//   This is what makes it a game and not a picture.
+//   Each run is one "frame", like one page of a flip book.
+//   Flip fast enough (about 60 times a second) and it looks like movement.
+// Skip this: you see the first picture and then everything freezes.
+
+// Each run: move things, check for hits, draw, check for a win.
+// The ORDER matters: we move first, then check, then draw what changed.
+function gameLoop() {
+  if (!isPlaying) return; // game stopped? Do nothing.
+
+  movePaddle();
+  moveBall();
+  checkTargetHits();
+  draw();
+  checkWin();
+
+  if (isPlaying) {
+    animationId = requestAnimationFrame(gameLoop);
+    // requestAnimationFrame = "run gameLoop again when the screen is ready to redraw".
+    // Skip this: the loop runs once and stops, so the game freezes after one frame.
+  }
+}
+
+// Resets everything and starts a fresh game
+function startGame() {
+  cancelAnimationFrame(animationId); // stop any game already running
+  // Skip that line: pressing Restart starts a second loop on top of the first,
+  //   and the ball moves twice as fast.
+  score = 0;
+  lives = 3;
+  createTargets(Number(slider.value)); // Number() turns the slider's "15" text into the number 15
+  resetBall();
+  updateHud();
+
+  isPlaying = true;
+  slider.disabled = true; // no changing the amount mid-game
+  messageEl.textContent = "Go!";
+  startBtn.textContent = "Restart";
+  gameLoop(); // kick off the first frame
+}
+
+
+// ---------- PART 10: Listening to the player ----------
+// What this is: EVENTS.
+//   An event is something the player does: click, press a key, move the mouse.
+//   addEventListener means: "when THIS happens, run THAT function".
+//   This is how the page and our functions get connected.
+// Skip this: every function above exists, but nothing ever calls them.
+//   The button does nothing, the keys do nothing, and the game never starts.
+
+// Moving the slider changes how many balls show at the top
+slider.addEventListener("input", function () {
+  targetCountEl.textContent = slider.value;
+  if (!isPlaying) {
+    createTargets(Number(slider.value));
+    updateHud();
+    draw();
+  }
+});
+
+// Clicking Start begins the game
+startBtn.addEventListener("click", startGame);
+// Note: startGame, not startGame(). We hand over the function to run LATER, on click.
+// With the brackets it would run right away when the page loads.
+
+// Pressing an arrow key starts moving the paddle
+document.addEventListener("keydown", function (e) {
+  if (e.key === "ArrowLeft") keys.left = true;
+  if (e.key === "ArrowRight") keys.right = true;
+});
+
+// Letting go of the arrow key stops the paddle
+// Skip this: once you press an arrow, the paddle never stops moving.
+document.addEventListener("keyup", function (e) {
+  if (e.key === "ArrowLeft") keys.left = false;
+  if (e.key === "ArrowRight") keys.right = false;
+});
+
+// The paddle follows the mouse
+canvas.addEventListener("mousemove", function (e) {
+  // The game area can be shown bigger or smaller on screen,
+  // so we work out where the mouse is inside the game itself.
+  // Skip this: on a small screen the paddle wouldn't line up with the mouse.
+  const rect = canvas.getBoundingClientRect();
+  const scale = canvas.width / rect.width;
+  const mouseX = (e.clientX - rect.left) * scale;
+  paddle.x = mouseX - paddle.width / 2; // centre the paddle on the mouse
+  movePaddle(); // keeps it from going off the edges
+});
+
+
+// ---------- When the page first opens ----------
+// These run once, straight away, so the screen isn't empty before you press Start.
+// Skip this: you see a blank box until you press Start.
+createTargets(Number(slider.value));
+updateHud();
+draw();
