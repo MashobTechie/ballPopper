@@ -1,6 +1,6 @@
 # Ball Popper
 
-A small game built with plain HTML, CSS and JavaScript. No libraries, no setup.
+A small game built with plain HTML, CSS and JavaScript.  
 
 ## How to play
 
