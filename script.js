@@ -97,3 +97,108 @@ let targets = [];
 const colors = ["#f87171", "#fb923c", "#4ade80", "#a78bfa", "#f472b6"];
 
 
+// ---------- PART 4: Setting up ----------
+// What this is: FUNCTIONS and LOOPS.
+//   A function is a named set of steps. Writing it doesn't run it.
+//   It only runs when we "call" it by its name, e.g. resetBall().
+//   We write steps once and reuse them as many times as we like.
+//
+//   A loop repeats the same steps many times so we don't have to
+//   copy and paste them. 40 balls = 1 loop, not 40 copies of the same code.
+
+// Makes the balls at the top and lines them up in rows.
+// "amount" is an input: the number from the slider gets passed in here.
+// Skip this: the list stays empty, so no balls appear at the top.
+function createTargets(amount) {
+  targets = []; // clear out the old ones
+  // Skip that line: every new game would pile new balls on top of the old ones.
+
+  const radius = 14;
+  const gap = 8;
+  const perRow = Math.floor(canvas.width / (radius * 2 + gap)); // how many fit in one row
+  // Push the rows in from the edges so they sit in the middle
+  const rowWidth = perRow * (radius * 2 + gap) - gap;
+  const offsetX = (canvas.width - rowWidth) / 2 + radius;
+
+  // The loop: i starts at 0, goes up by 1 each time,
+  // and stops when it reaches the amount.
+  // So if amount is 15, this runs 15 times and makes 15 balls.
+  for (let i = 0; i < amount; i++) {
+    const row = Math.floor(i / perRow); // which row this ball goes in
+    const col = i % perRow;             // which spot in that row
+    // Skip row/col: every ball would sit on the same spot, looking like just one ball.
+
+    // Each ball is its own object (Part 2 idea)...
+    const target = {
+      x: offsetX + col * (radius * 2 + gap),
+      y: 30 + row * (radius * 2 + gap),
+      radius: radius,
+      color: colors[row % colors.length],
+      points: 10, // what you earn for hitting it
+    };
+
+    // ...and gets added to the end of the list (Part 3 idea)
+    targets.push(target);
+    // Skip push: the ball gets made and then thrown away. The list stays empty.
+  }
+}
+
+// Puts the yellow ball and paddle back in the middle
+// Skip this: after you miss, the ball stays below the screen and you lose all lives at once.
+function resetBall() {
+  ball.x = canvas.width / 2;
+  ball.y = canvas.height - 60;
+  ball.speedX = Math.random() > 0.5 ? 4 : -4; // go left or right by chance
+  ball.speedY = -4;
+  paddle.x = canvas.width / 2 - paddle.width / 2;
+}
+
+// Shows the latest score, lives and balls left on the page
+// Skip this: the game still keeps score, but the numbers on screen never change.
+function updateHud() {
+  scoreEl.textContent = score;
+  livesEl.textContent = lives;
+  leftEl.textContent = targets.length;
+}
+
+
+// ---------- PART 5: Drawing ----------
+// What this is: small FUNCTIONS that each draw one thing.
+//   Splitting it up means each function is short and easy to understand,
+//   and drawCircle can be reused for both the yellow ball and the targets.
+// Skip this: the game runs but you see a blank box.
+
+// Draws one circle. We give it where, how big and what colour.
+function drawCircle(x, y, radius, color) {
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2); // a full circle
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.closePath();
+}
+
+// Draws the paddle as a rectangle
+function drawPaddle() {
+  ctx.fillStyle = paddle.color;
+  ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+}
+
+// Draws every ball still left at the top.
+// forEach is another kind of loop: "for each item in the list, do this".
+// Balls removed from the list are no longer drawn, which is why they vanish.
+function drawTargets() {
+  targets.forEach(function (target) {
+    drawCircle(target.x, target.y, target.radius, target.color);
+  });
+}
+
+// Wipes the screen and draws everything again
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Skip clearRect: the old pictures never get wiped, so the ball leaves a long trail.
+  drawTargets();
+  drawPaddle();
+  drawCircle(ball.x, ball.y, ball.radius, ball.color);
+}
+
+
