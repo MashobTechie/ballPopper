@@ -202,3 +202,140 @@ function draw() {
 }
 
 
+// ---------- PART 6: Moving things ----------
+// What this is: FUNCTIONS with IF checks.
+//   "if" means: only do this when something is true.
+//   Moving is just changing x and y a little bit each time the screen redraws.
+// Skip this: everything is drawn but nothing moves.
+
+// Moves the paddle with the arrow keys
+function movePaddle() {
+  if (keys.left) paddle.x -= paddle.speed;  // smaller x = further left
+  if (keys.right) paddle.x += paddle.speed; // bigger x = further right
+
+  // Stop the paddle going off the edges
+  // Skip this: you could slide the paddle right off the screen.
+  if (paddle.x < 0) paddle.x = 0;
+  if (paddle.x + paddle.width > canvas.width) {
+    paddle.x = canvas.width - paddle.width;
+  }
+}
+
+// Moves the yellow ball and makes it bounce
+function moveBall() {
+  ball.x += ball.speedX;
+  ball.y += ball.speedY;
+
+  // Hit the left or right wall? Bounce back.
+  // Bouncing = flipping the direction: 4 becomes -4, -4 becomes 4.
+  // Skip this: the ball flies off the side and never comes back.
+  if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width) {
+    ball.speedX = -ball.speedX;
+  }
+
+  // Hit the top? Bounce down.
+  // Skip this: once all the targets are gone from its path, the ball escapes out the top.
+  if (ball.y - ball.radius < 0) {
+    ball.speedY = -ball.speedY;
+  }
+
+  // Is the ball touching the paddle while falling?
+  // && means "and": every one of these must be true.
+  const hitsPaddle =
+    ball.y + ball.radius >= paddle.y &&
+    ball.y + ball.radius <= paddle.y + paddle.height &&
+    ball.x >= paddle.x &&
+    ball.x <= paddle.x + paddle.width &&
+    ball.speedY > 0; // only while falling, or it could get stuck wobbling on the paddle
+
+  if (hitsPaddle) {
+    ball.speedY = -ball.speedY; // send it back up
+    // Hitting near the paddle's edge sends the ball off at a sharper angle
+    // Skip this: the ball always bounces at the same angle and the game gets boring.
+    const hitPoint = (ball.x - (paddle.x + paddle.width / 2)) / (paddle.width / 2);
+    ball.speedX = hitPoint * 6;
+  }
+
+  // Ball fell past the paddle
+  // Skip this: missing the ball costs nothing, so you can never lose.
+  if (ball.y - ball.radius > canvas.height) {
+    loseLife();
+  }
+}
+
+
+// ---------- PART 7: Hitting the balls at the top ----------
+// What this is: a LOOP going through the ARRAY, and REMOVING items from it.
+//   This is the heart of the game.
+// Skip this: the yellow ball passes straight through the targets.
+//   Nothing disappears, the score never goes up, and you can never win.
+
+// Checks if the yellow ball touched any ball at the top.
+// If it did, that ball is removed from the list and you get points.
+function checkTargetHits() {
+  // We check the list from the LAST ball to the FIRST.
+  // Why? Removing a ball makes the ones after it move up a spot.
+  // Like people in a queue: if person 3 leaves, person 4 becomes person 3.
+  // Going forwards, we'd move on to spot 4 and skip that person.
+  // Going backwards, the people who shuffle are ones we've already checked.
+  for (let i = targets.length - 1; i >= 0; i--) {
+    const target = targets[i]; // the ball at position i in the list
+
+    // How far apart the two balls are
+    const dx = ball.x - target.x;
+    const dy = ball.y - target.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    // Closer than both sizes added together means they are touching
+    if (distance < ball.radius + target.radius) {
+      targets.splice(i, 1);
+      // splice(i, 1) means: go to position i and remove 1 item.
+      // Once it's out of the list, drawTargets stops drawing it, so it vanishes.
+
+      score += target.points;     // add the points (same as score = score + 10)
+      ball.speedY = -ball.speedY; // bounce away
+      // Skip the bounce: the ball ploughs through a whole column in one go.
+
+      updateHud();
+      break; // stop the loop: only one hit at a time
+      // Skip break: hitting two touching balls at once could flip the bounce twice,
+      //   so the ball carries on as if it never bounced.
+    }
+  }
+}
+
+
+// ---------- PART 8: Winning and losing ----------
+// What this is: FUNCTIONS that check the score and lives and decide what happens.
+// Skip this: the game never ends. It just keeps going forever.
+
+// Takes away a life. No lives left means game over.
+function loseLife() {
+  lives--; // same as lives = lives - 1
+  updateHud();
+
+  if (lives === 0) {
+    endGame("Game over! Final score: " + score);
+  } else {
+    messageEl.textContent = "Ouch! " + lives + " lives left.";
+    resetBall();
+  }
+}
+
+// No balls left in the list means you win
+function checkWin() {
+  if (targets.length === 0) {
+    endGame("You cleared them all! Score: " + score);
+  }
+}
+
+// Stops the game and shows a message
+function endGame(text) {
+  isPlaying = false;
+  cancelAnimationFrame(animationId); // stop the game loop
+  messageEl.textContent = text;
+  startBtn.textContent = "Play again";
+  slider.disabled = false; // let the player pick a new amount
+}
+
+
